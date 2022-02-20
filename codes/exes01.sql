@@ -14,3 +14,30 @@ select * from employees order by hire_date desc limit 1; -- 最晚入职的员�
 -- 2.查找入职员工时间排名倒数第三的员工所有信息
 select * from employees where hire_date=(select distinct(hire_date) from employees order by hire_date desc limit 2, 1);
 select * from employees where hire_date=(select distinct(hire_date) from employees order by hire_date desc limit 1 offset 2);
+
+-- 3.获取每个部门中当前员工薪水最高的相关信息
+-- 员工表dept_emp
++--------+---------+------------+------------+
+| emp_no | dept_no | from_date  | to_date    |
++--------+---------+------------+------------+
+|  10001 | d001    | 1986-06-26 | 9999-01-01 |
+|  10002 | d001    | 1996-08-03 | 9999-01-01 |
+|  10003 | d002    | 1996-08-03 | 9999-01-01 |
++--------+---------+------------+------------+
+-- 薪水表salaries
++--------+--------+------------+------------+
+| emp_no | salary | from_date  | to_date    |
++--------+--------+------------+------------+
+|  10001 |  88958 | 2002-06-22 | 9999-01-01 |
+|  10002 |  72527 | 2001-08-02 | 9999-01-01 |
+|  10003 |  92527 | 2001-08-02 | 9999-01-01 |
++--------+--------+------------+------------+
+-- 获取每个部门中当前员工薪水最高的相关信息，给出dept_no, emp_no以及其对应的salary，按照部门编号dept_no升序排列
+/*
+通过查询构建两张虚拟表
+一张表记录最高薪水（部门编号,当前最高薪水），一张表记录所有员工的部门及薪水信息（部门编号,员工编号,当前薪水），用部门编号和薪水相等取到最高薪水的员工ID
+ */
+select sa.dept_no, ep.emp_no, sa.maxSalary from
+        (select emp.emp_no, emp.dept_no, sal.salary from dept_emp emp inner join salaries sal on emp.emp_no=sal.emp_no) ep inner join
+        (select dept_no, max(salary) maxSalary from (select emp.emp_no emp_no, emp.dept_no dept_no, sal.salary salary from dept_emp emp inner join salaries sal on emp.emp_no=sal.emp_no) un group by dept_no) sa
+        on ep.salary=sa.maxSalary and ep.dept_no=sa.dept_no order by dept_no;
