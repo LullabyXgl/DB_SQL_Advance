@@ -37,7 +37,11 @@ select * from employees where hire_date=(select distinct(hire_date) from employe
 通过查询构建两张虚拟表
 一张表记录最高薪水（部门编号,当前最高薪水），一张表记录所有员工的部门及薪水信息（部门编号,员工编号,当前薪水），用部门编号和薪水相等取到最高薪水的员工ID
  */
+-- 实现方式1
 select sa.dept_no, ep.emp_no, sa.maxSalary from
         (select emp.emp_no, emp.dept_no, sal.salary from dept_emp emp inner join salaries sal on emp.emp_no=sal.emp_no) ep inner join
         (select dept_no, max(salary) maxSalary from (select emp.emp_no emp_no, emp.dept_no dept_no, sal.salary salary from dept_emp emp inner join salaries sal on emp.emp_no=sal.emp_no) un group by dept_no) sa
         on ep.salary=sa.maxSalary and ep.dept_no=sa.dept_no order by dept_no;
+-- 实现方式2
+select emp.dept_no, sa.emp_no, sa.salary maxSalary from dept_emp emp inner join salaries sa on emp.emp_no=sa.emp_no
+where sa.salary in (select max(s.salary) from dept_emp e inner join salaries s on e.emp_no=s.emp_no where e.dept_no=emp.dept_no) order by dept_no;
