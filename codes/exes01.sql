@@ -45,3 +45,32 @@ select sa.dept_no, ep.emp_no, sa.maxSalary from
 -- 实现方式2
 select emp.dept_no, sa.emp_no, sa.salary maxSalary from dept_emp emp inner join salaries sa on emp.emp_no=sa.emp_no
 where sa.salary in (select max(s.salary) from dept_emp e inner join salaries s on e.emp_no=s.emp_no where e.dept_no=emp.dept_no) order by dept_no;
+
+-- 4.获取当前薪水第二多的员工的emp_no以及其对应的薪水salary
+-- 员工表employees
++--------+------------+------------+-----------+--------+------------+
+| emp_no | birth_date | first_name | last_name | gender | hire_date  |
++--------+------------+------------+-----------+--------+------------+
+|  10001 | 1953-09-02 | Georgi     | Facello   | M      | 1986-06-26 |
+|  10002 | 1964-06-02 | Bezalel    | Simmel    | F      | 1985-11-21 |
+|  10003 | 1959-12-03 | Parto      | Bamford   | M      | 1986-08-28 |
+|  10004 | 1954-05-01 | Chirstian  | Koblick   | M      | 1986-12-01 |
++--------+------------+------------+-----------+--------+------------+
+-- 薪水表salaries
++--------+--------+------------+------------+
+| emp_no | salary | from_date  | to_date    |
++--------+--------+------------+------------+
+|  10001 |  88958 | 2002-06-22 | 9999-01-01 |
+|  10002 |  72527 | 2001-08-02 | 9999-01-01 |
+|  10003 |  43311 | 2001-12-01 | 9999-01-01 |
+|  10004 |  74057 | 2001-11-27 | 9999-01-01 |
++--------+--------+------------+------------+
+-- 实现方法1:order by和limit配合使用
+select emp.emp_no, sal.salary, emp.last_name, emp.first_name from employees emp inner join salaries sal on emp.emp_no=sal.emp_no
+where sal.salary=(select distinct(salary) from salaries order by salary desc limit 1, 1);
+-- 实现方式2:对薪资取两次max运算(第二高的薪资是低于最高薪资的最高薪资)得到第二高的薪资
+select emp.emp_no, sal.salary, emp.last_name, emp.first_name from employees emp inner join salaries sal on emp.emp_no=sal.emp_no
+where sal.salary=(select max(salary) from salaries where salary < (select max(salary) from salaries));
+-- 实现方式三:salaries自连接查询,连接条件为s1.salary<=s2.salary,自连接后最高的s1.salary对应s2中count(distinct(s2.salary))的值为1,第二高的s1.salary对应s2中count(distinct(s2.salary))的值为2....
+select emp.emp_no, sal.salary, emp.last_name, emp.first_name from employees emp inner join salaries sal on emp.emp_no=sal.emp_no
+where sal.salary=(select s1.salary from salaries s1 inner join salaries s2 on s1.salary <= s2.salary group by s1.salary having count(distinct(s2.salary))=2);
